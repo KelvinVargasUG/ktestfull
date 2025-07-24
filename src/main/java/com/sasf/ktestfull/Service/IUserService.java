@@ -13,4 +13,7 @@ public interface IUserService {
     public PaginatedResponse<UserResponseDto> getAllUsers(int page, int size, String sortBy, String sortDirection);
 
     public UserResponseDto getUserById(Long id);
+
+    public UserResponseDto getAuthenticatedUserId(String email);
+
 }

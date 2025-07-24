@@ -17,18 +17,24 @@ import com.sasf.ktestfull.Dto.PaginatedResponse;
 import com.sasf.ktestfull.Dto.ProjectRequestDto;
 import com.sasf.ktestfull.Dto.ProjectResponseDto;
 import com.sasf.ktestfull.Service.IProjectService;
+import com.sasf.ktestfull.Util.JwtUtil;
 import com.sasf.ktestfull.Util.ResponseUtil;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/projects")
 public class ProjectController {
+
     private final IProjectService projectService;
 
-    public ProjectController(IProjectService projectService) {
+    private final JwtUtil jwtUtil;
+
+    public ProjectController(IProjectService projectService, JwtUtil jwtUtil) {
         this.projectService = projectService;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping
@@ -42,12 +48,12 @@ public class ProjectController {
 
     @GetMapping
     public ResponseEntity<ApiGenericResponse<PaginatedResponse<ProjectResponseDto>>> getAllProject(
-            @RequestParam(required = true) Long userId,
+            HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection) {
-
+        Long userId = jwtUtil.extractUserIdFromCurrentToken(request);
         PaginatedResponse<ProjectResponseDto> users = projectService.getProjectsByUser(page, size, sortBy,
                 sortDirection, userId);
         return ResponseUtil.ok(null, users);
@@ -55,19 +61,20 @@ public class ProjectController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiGenericResponse<ProjectResponseDto>> updateProject(
+            HttpServletRequest request,
             @PathVariable("id") Long idProject,
-            @RequestParam(required = true) Long userId,
-            @Valid @RequestBody ProjectRequestDto request) {
-
-        ProjectResponseDto updatedProject = projectService.updateProject(idProject, request, userId);
+            @Valid @RequestBody ProjectRequestDto projectRequestDto) {
+        Long userId = jwtUtil.extractUserIdFromCurrentToken(request);
+        ProjectResponseDto updatedProject = projectService.updateProject(idProject, projectRequestDto, userId);
         return ResponseUtil.ok(null, updatedProject);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiGenericResponse<Object>> deleteProject(
-            @PathVariable Long id,
-            @RequestParam Long userId) {
+            HttpServletRequest request,
+            @PathVariable Long id) {
 
+        Long userId = jwtUtil.extractUserIdFromCurrentToken(request);
         projectService.deleteProject(id, userId);
         return ResponseUtil.ok("Project deleted successfully", null);
     }

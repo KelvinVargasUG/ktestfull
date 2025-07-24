@@ -65,7 +65,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<ApiGenericResponse<UserResponseDto>> createUser(
-            @RequestParam(required = true) String user,
+            @RequestParam(defaultValue = "system") String user,
             @Valid @RequestBody UserRequestDto request) {
 
         UserResponseDto createdUser = userService.createUser(request, user);

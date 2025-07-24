@@ -43,4 +43,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     public boolean existsByEmailAndStatus(String email, @Param("statuses") List<String> validStatuses);
 
     public Optional<User> findByIdUserAndStatus(Long userId, String active);
+
+    public Optional<User> findByEmailAndStatus(String email, String status);
 }

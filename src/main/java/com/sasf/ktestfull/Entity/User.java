@@ -39,7 +39,14 @@ public class User extends AuditBaseEntity {
     @Column(name = "password")
     private String password;
 
+    @Column(name = "status")
+    private String status;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_rol", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id_user"), inverseJoinColumns = @JoinColumn(name = "rol_id", referencedColumnName = "id_rol"))
     private List<Rol> rol;
+
+    public List<String> getRoleNames() {
+        return rol.stream().map(Rol::getName).toList();
+    }
 }

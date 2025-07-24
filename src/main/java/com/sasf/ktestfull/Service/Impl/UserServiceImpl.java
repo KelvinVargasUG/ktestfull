@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.sasf.ktestfull.Constant.StatusConst;
@@ -32,10 +33,14 @@ public class UserServiceImpl implements IUserService {
 
     private final UserMapper userMapper;
 
-    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper, UserValidation userValidation) {
+    private final PasswordEncoder passwordEncoder;
+
+    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper, UserValidation userValidation,
+            PasswordEncoder passwordEncoder) {
         this.userValidation = userValidation;
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -49,7 +54,7 @@ public class UserServiceImpl implements IUserService {
 
         userValidation.validateUserUniqueness(request.getUsername(), request.getEmail());
         User userCreate = userMapper.toEntity(request);
-        // user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userCreate.setPassword(passwordEncoder.encode(request.getPassword()));
         userCreate.setStatus(StatusConst.ACTIVE);
         userCreate.setCreatedBy(user);
         User savedUser = userRepository.save(userCreate);
@@ -84,7 +89,7 @@ public class UserServiceImpl implements IUserService {
         Sort.Direction direction = Sort.Direction.fromString(sortDirection.toUpperCase());
         Sort sort = Sort.by(direction, sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        
+
         Page<User> usersPage = userRepository.findByStatus(StatusConst.GENERIC_STATUS, pageable);
         Page<UserResponseDto> responsePage = usersPage.map(user -> userMapper.toResponseDto(user));
         return PaginatedResponse.of(responsePage);
@@ -104,6 +109,13 @@ public class UserServiceImpl implements IUserService {
         User user = userRepository.findByIdUserAndStatuses(id, StatusConst.GENERIC_STATUS)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
 
+        return userMapper.toResponseDto(user);
+    }
+
+    @Override
+    public UserResponseDto getAuthenticatedUserId(String email) {
+        User user = userRepository.findByEmailAndStatus(email, StatusConst.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return userMapper.toResponseDto(user);
     }
 

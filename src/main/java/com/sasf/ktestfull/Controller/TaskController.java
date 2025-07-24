@@ -19,8 +19,10 @@ import com.sasf.ktestfull.Dto.PaginatedResponse;
 import com.sasf.ktestfull.Dto.TaskRequestDto;
 import com.sasf.ktestfull.Dto.TaskResponseDto;
 import com.sasf.ktestfull.Service.ITaskService;
+import com.sasf.ktestfull.Util.JwtUtil;
 import com.sasf.ktestfull.Util.ResponseUtil;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @CrossOrigin(origins = "*")
@@ -29,27 +31,32 @@ import jakarta.validation.Valid;
 public class TaskController {
     private final ITaskService taskService;
 
-    public TaskController(ITaskService taskService) {
+    private final JwtUtil jwtUtil;
+
+    public TaskController(ITaskService taskService, JwtUtil jwtUtil) {
         this.taskService = taskService;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping
     public ResponseEntity<ApiGenericResponse<TaskResponseDto>> createTask(
-            @Valid @RequestBody TaskRequestDto request,
-            @RequestParam Long userId) {
+            HttpServletRequest request,
+            @Valid @RequestBody TaskRequestDto taskRequestDto) {
 
-        TaskResponseDto createdTask = taskService.createTask(request, userId);
+        Long userId = jwtUtil.extractUserIdFromCurrentToken(request);
+        TaskResponseDto createdTask = taskService.createTask(taskRequestDto, userId);
         return ResponseUtil.created(null, createdTask);
     }
 
     @GetMapping
     public ResponseEntity<ApiGenericResponse<PaginatedResponse<TaskResponseDto>>> listUserTasks(
-            @RequestParam Long userId,
+            HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection) {
 
+        Long userId = jwtUtil.extractUserIdFromCurrentToken(request);
         PaginatedResponse<TaskResponseDto> tasksPage = taskService.listUserTasks(userId, page, size, sortBy,
                 sortDirection);
         return ResponseUtil.ok(null, tasksPage);
@@ -64,19 +71,21 @@ public class TaskController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiGenericResponse<TaskResponseDto>> updateTask(
+            HttpServletRequest request,
             @PathVariable Long id,
-            @Valid @RequestBody TaskRequestDto request,
-            @RequestParam Long userId) {
+            @Valid @RequestBody TaskRequestDto taskRequestDto) {
 
-        TaskResponseDto updatedTask = taskService.updateTask(id, request, userId);
+        Long userId = jwtUtil.extractUserIdFromCurrentToken(request);
+        TaskResponseDto updatedTask = taskService.updateTask(id, taskRequestDto, userId);
         return ResponseUtil.ok(null, updatedTask);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiGenericResponse<Object>> deleteTask(
-            @PathVariable Long id,
-            @RequestParam Long userId) {
+            HttpServletRequest request,
+            @PathVariable Long id) {
 
+        Long userId = jwtUtil.extractUserIdFromCurrentToken(request);
         taskService.deleteTask(id, userId);
         return ResponseUtil.ok("Task deleted successfully", null);
     }
